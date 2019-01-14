@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>stringify-css-stylesheet tests</title>
+
+<style>a { --b: c; }</style>
+<style>@import url("");</style>
+<style>@media { }</style>
+<style>@font-face { }</style>
+<style>@page { }</style>
+<style>@keyframes demo { }</style>
+<style>@namespace url("");</style>
+<style>@supports () { }</style>
+<style>
+  @media (min-width: 500px) {
+    @media (min-height: 500px) {
+      :root { --demo: demo; }
+    }
+  }
+</style>
+
+<h1>stringify-css-stylesheet tests</h1>
+<h2 id=pass>Tests passed:</h2>
+<ul></ul>
+<h2 id=fail>Tests failed:</h2>
+<ul></ul>
+
+<script type=module>
+  import stringifyStylesheet from './index.js'
+
+  const tests = [
+
+    // Input testing
+    {
+      name: 'Return empty string if no rule present',
+      input: () => stringifyStylesheet(1),
+      expected: ''
+    },
+
+    // Output testing
+    {
+      name: 'CSSStyleRule from CSSOM matches test string',
+      input: () => stringifyStylesheet(document.styleSheets[0]).replace(/\s/g, ''),
+      expected: `a { --b: c; }`.replace(/\s/g, '')
+    },
+    {
+      name: 'CSSImportRule from CSSOM matches test string',
+      input: () => stringifyStylesheet(document.styleSheets[1]),
+      expected: `@import url("");`
+    },
+    {
+      name: 'CSSMediaRule from CSSOM matches test string',
+      input: () => stringifyStylesheet(document.styleSheets[2]).replace(/\s/g, ''),
+      expected: `@media { }`.replace(/\s/g, '')
+    },
+    {
+      name: 'CSSFontFaceRule from CSSOM matches test string',
+      input: () => stringifyStylesheet(document.styleSheets[3]).replace(/\s/g, ''),
+      expected: `@font-face { }`.replace(/\s/g, '')
+    },
+    {
+      name: 'CSSPageRule from CSSOM matches test string',
+      input: () => stringifyStylesheet(document.styleSheets[4]),
+      expected: `@page { }`
+    },
+    {
+      name: 'CSSKeyframesRule from CSSOM matches test string',
+      input: () => stringifyStylesheet(document.styleSheets[5]).replace(/\s/g, ''),
+      expected: `@keyframes demo { \n}`.replace(/\s/g, '')
+    },
+    {
+      name: 'CSSNamespaceRule from CSSOM matches test string',
+      input: () => stringifyStylesheet(document.styleSheets[6]),
+      expected: `@namespace url("");`
+    },
+    {
+      name: 'CSSSupportsRule from CSSOM matches test string',
+      input: () => stringifyStylesheet(document.styleSheets[7]).replace(/\s/g, ''),
+      expected: `@supports ( ) { }`.replace(/\s/g, '')
+    },
+
+    // Output nested rules
+    {
+      name: 'Nested at-rules output correctly',
+      input: () => stringifyStylesheet(document.styleSheets[8]).replace(/\s/g, ''),
+      expected: `
+        @media (min-width: 500px) {
+          @media (min-height: 500px) {
+            :root { --demo: demo; }
+          }
+        }
+      `.replace(/\s/g, '')
+    },
+
+  ]
+
+  const results = tests.reduce((acc, test) => {
+      test.result = test.input()
+      test.result === test.expected
+        ? acc.pass.push(test)
+        : acc.fail.push(test)
+      return acc
+    },
+    {pass: [], fail: []}
+  )
+
+  const passed = results.pass.length
+  const failed = results.fail.length
+  const total = passed + failed
+
+// populate results to page
+document.querySelector('#pass').textContent = `Tests passed ${passed}/${total}:`
+  document.querySelector('#fail').textContent = `Tests failed ${failed}/${total}:`
+
+  results.pass.forEach(test => {
+    const tag = document.createElement('li')
+    tag.innerHTML = `
+      <details>
+        <summary>${test.name}</summary>
+        <h3>Test</h3>
+        <p><pre>${test.input.toString()}</pre></p>
+        <h3>Expected</h3>
+        <p><code>${test.expected}</code></p>
+        <h3>Result</h3>
+        <p><code>${test.result}</code></p>
+      </details>
+    `
+    return document.querySelector('#pass + ul').appendChild(tag)
+  })
+
+  results.fail.forEach(test => {
+    const tag = document.createElement('li')
+    tag.innerHTML = `
+      <details>
+        <summary style=text-decoration:line-through>${test.name}</summary>
+        <h3>Test</h3>
+        <p><code>${test.input.toString().slice(6)}</code></p>
+        <h3>Expected</h3>
+        <p><code>${test.expected}</code></p>
+        <h3>Result</h3>
+        <p><code>${test.result}</code></p>
+      </details>
+    `
+    return document.querySelector('#fail + ul').appendChild(tag)
+  })
+</script>
